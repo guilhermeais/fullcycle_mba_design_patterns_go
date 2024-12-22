@@ -3,29 +3,31 @@ package usecase
 import (
 	"context"
 	"fmt"
+	domain "invoices/internal/app/domain/entities"
 	"os"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 )
 
+type GenerateInvoicesInput struct {
+	Year, Month int
+	Type        string
+}
+
+type GenerateInvoicesOutput struct {
+	Date  string
+	Amout int
+}
+
 type GenerateInvoices struct {
 }
 
-// id uuid not null default uuid_generate_v4() primary key,
-// description text,
-// amount numeric,
-// periods integer,
-// date timestamp
+const (
+	getContractsQuery = "select * from invoices_service.contract"
+	paymentQuery      = "select id, date, amount from invoices_service.payment where contract_id = $1"
+)
 
-type Contract struct {
-	id, description string
-	amount          float64
-	periods         int
-	date            time.Time
-}
-
-func (uc *GenerateInvoices) Execute() ([]Contract, error) {
+func (uc *GenerateInvoices) Execute(input GenerateInvoicesInput) ([]GenerateInvoicesOutput, error) {
 	dbUrl := os.Getenv("POSTGRES_URL")
 	fmt.Printf("connecting to '%s'", dbUrl)
 	conn, err := pgx.Connect(context.Background(), dbUrl)
@@ -34,26 +36,52 @@ func (uc *GenerateInvoices) Execute() ([]Contract, error) {
 	}
 	defer conn.Close(context.Background())
 
-	const query = "select * from invoices_service.contract"
-	contracts := []Contract{}
-	rows, err := conn.Query(context.Background(), query)
+	var results []GenerateInvoicesOutput
+
+	var contracts []domain.Contract
+	contractRows, err := conn.Query(context.Background(), getContractsQuery)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get contracts: %v", err)
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var contract Contract
-		err := rows.Scan(&contract.id, &contract.description, &contract.amount, &contract.periods, &contract.date)
+	defer contractRows.Close()
+	for contractRows.Next() {
+		var contract domain.Contract
+		err := contractRows.Scan(&contract.Id, &contract.Description, &contract.Amount, &contract.Periods, &contract.Date)
 		if err != nil {
 			return nil, fmt.Errorf("unable to scan contract: %v", err)
 		}
 		contracts = append(contracts, contract)
 	}
-	if rows.Err() != nil {
-		return nil, fmt.Errorf("error iterating over rows: %v", rows.Err())
+
+	if contractRows.Err() != nil {
+		return nil, fmt.Errorf("error iterating over rows: %v", contractRows.Err())
 	}
 
-	return contracts, nil
+	for _, contract := range contracts {
+		paymentRows, err := conn.Query(context.Background(), paymentQuery, contract.Id)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get payments: %v", err)
+		}
+		defer paymentRows.Close()
+
+		for paymentRows.Next() {
+			var payment domain.Payment
+			err := paymentRows.Scan(&payment.Id, &payment.Date, &payment.Amount)
+			if err != nil {
+				return nil, fmt.Errorf("unable to scan payment: %v", err)
+			}
+
+			fmt.Printf("payment date: %v", int(payment.Date.Month()))
+
+			if int(payment.Date.Month()) != input.Month || payment.Date.Year() != input.Year {
+				continue
+			}
+			const dateFormat = "2006-01-02"
+			results = append(results, GenerateInvoicesOutput{Date: payment.Date.Format(dateFormat), Amout: payment.Amount})
+		}
+	}
+
+	return results, nil
 }
 
 func NewGenerateInvoices() *GenerateInvoices {
