@@ -4,6 +4,6 @@ import "time"
 
 type Payment struct {
 	Id     string
-	Amount int
+	Amount float64
 	Date   time.Time
 }

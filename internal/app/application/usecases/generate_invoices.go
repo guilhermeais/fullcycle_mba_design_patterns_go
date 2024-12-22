@@ -16,7 +16,7 @@ type GenerateInvoicesInput struct {
 
 type GenerateInvoicesOutput struct {
 	Date  string
-	Amout int
+	Amout float64
 }
 
 type GenerateInvoices struct {
@@ -29,7 +29,6 @@ const (
 
 func (uc *GenerateInvoices) Execute(input GenerateInvoicesInput) ([]GenerateInvoicesOutput, error) {
 	dbUrl := os.Getenv("POSTGRES_URL")
-	fmt.Printf("connecting to '%s'", dbUrl)
 	conn, err := pgx.Connect(context.Background(), dbUrl)
 	if err != nil {
 		return nil, fmt.Errorf("unable to connect to database %s: %v", dbUrl, err)
@@ -64,20 +63,34 @@ func (uc *GenerateInvoices) Execute(input GenerateInvoicesInput) ([]GenerateInvo
 		}
 		defer paymentRows.Close()
 
+		const resultDateFormat = "2006-01-02"
+
 		for paymentRows.Next() {
-			var payment domain.Payment
-			err := paymentRows.Scan(&payment.Id, &payment.Date, &payment.Amount)
-			if err != nil {
-				return nil, fmt.Errorf("unable to scan payment: %v", err)
+			if input.Type == "cash" {
+				var payment domain.Payment
+				err := paymentRows.Scan(&payment.Id, &payment.Date, &payment.Amount)
+				if err != nil {
+					return nil, fmt.Errorf("unable to scan payment: %v", err)
+				}
+
+				fmt.Printf("payment date: %v", int(payment.Date.Month()))
+
+				if int(payment.Date.Month()) != input.Month || payment.Date.Year() != input.Year {
+					continue
+				}
+				results = append(results, GenerateInvoicesOutput{Date: payment.Date.Format(resultDateFormat), Amout: payment.Amount})
 			}
 
-			fmt.Printf("payment date: %v", int(payment.Date.Month()))
+			if input.Type == "accrual" {
+				period := 0
 
-			if int(payment.Date.Month()) != input.Month || payment.Date.Year() != input.Year {
-				continue
+				for period <= contract.Periods-1 {
+					date := contract.Date.AddDate(0, period, 0)
+					period++
+					amount := contract.Amount / float64(contract.Periods)
+					results = append(results, GenerateInvoicesOutput{Date: date.Format(resultDateFormat), Amout: amount})
+				}
 			}
-			const dateFormat = "2006-01-02"
-			results = append(results, GenerateInvoicesOutput{Date: payment.Date.Format(dateFormat), Amout: payment.Amount})
 		}
 	}
 

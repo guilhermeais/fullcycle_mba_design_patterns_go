@@ -25,7 +25,27 @@ func TestGenerateInvoices(t *testing.T) {
 		assert.Nil(t, err, fmt.Sprintf("does not expected the error: %v", err))
 		assert.Len(t, output, 1)
 
-		assert.Equal(t, output[0].Date, "2024-12-18")
-		assert.Equal(t, output[0].Amout, 6000)
+		assert.Equal(t, "2024-12-18", output[0].Date)
+		assert.Equal(t, float64(6000), output[0].Amout)
+	})
+
+	t.Run("Deve gerar notas fiscais por regime de competência", func(t *testing.T) {
+		err := godotenv.Load("../../../../.env")
+		if err != nil {
+			t.Fatalf("Error loading .env file: %v", err)
+		}
+		generateInvoices := NewGenerateInvoices()
+		input := GenerateInvoicesInput{
+			Year:  2024,
+			Month: 12,
+			Type:  "accrual",
+		}
+		output, err := generateInvoices.Execute(input)
+
+		assert.Nil(t, err, fmt.Sprintf("does not expected the error: %v", err))
+		assert.Len(t, output, 12)
+
+		assert.Equal(t, "2024-12-19", output[0].Date)
+		assert.Equal(t, float64(500), output[0].Amout)
 	})
 }
