@@ -84,10 +84,15 @@ func (uc *GenerateInvoices) Execute(input GenerateInvoicesInput) ([]GenerateInvo
 			if input.Type == "accrual" {
 				period := 0
 
-				for period <= contract.Periods-1 {
+				for period <= contract.Periods {
 					date := contract.Date.AddDate(0, period, 0)
 					period++
 					amount := contract.Amount / float64(contract.Periods)
+
+					if int(date.Month()) != input.Month || date.Year() != input.Year {
+						continue
+					}
+
 					results = append(results, GenerateInvoicesOutput{Date: date.Format(resultDateFormat), Amout: amount})
 				}
 			}
