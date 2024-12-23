@@ -10,11 +10,7 @@ import (
 
 func TestGenerateInvoices(t *testing.T) {
 	t.Run("Deve gerar notas fiscais por regime de caixa", func(t *testing.T) {
-		err := godotenv.Load("../../../../.env")
-		if err != nil {
-			t.Fatalf("Error loading .env file: %v", err)
-		}
-		generateInvoices := NewGenerateInvoices()
+		generateInvoices := makeSut(t)
 		input := GenerateInvoicesInput{
 			Year:  2024,
 			Month: 12,
@@ -30,11 +26,7 @@ func TestGenerateInvoices(t *testing.T) {
 	})
 
 	t.Run("Deve gerar notas fiscais por regime de competência", func(t *testing.T) {
-		err := godotenv.Load("../../../../.env")
-		if err != nil {
-			t.Fatalf("Error loading .env file: %v", err)
-		}
-		generateInvoices := NewGenerateInvoices()
+		generateInvoices := makeSut(t)
 		input := GenerateInvoicesInput{
 			Year:  2024,
 			Month: 12,
@@ -50,11 +42,7 @@ func TestGenerateInvoices(t *testing.T) {
 	})
 
 	t.Run("Deve gerar notas fiscais por regime de competência (última data)", func(t *testing.T) {
-		err := godotenv.Load("../../../../.env")
-		if err != nil {
-			t.Fatalf("Error loading .env file: %v", err)
-		}
-		generateInvoices := NewGenerateInvoices()
+		generateInvoices := makeSut(t)
 		input := GenerateInvoicesInput{
 			Year:  2025,
 			Month: 12,
@@ -70,11 +58,7 @@ func TestGenerateInvoices(t *testing.T) {
 	})
 
 	t.Run("Deve gerar notas fiscais por regime de competência (fora do periodo)", func(t *testing.T) {
-		err := godotenv.Load("../../../../.env")
-		if err != nil {
-			t.Fatalf("Error loading .env file: %v", err)
-		}
-		generateInvoices := NewGenerateInvoices()
+		generateInvoices := makeSut(t)
 		input := GenerateInvoicesInput{
 			Year:  2026,
 			Month: 1,
@@ -85,4 +69,15 @@ func TestGenerateInvoices(t *testing.T) {
 		assert.Nil(t, err, fmt.Sprintf("does not expected the error: %v", err))
 		assert.Len(t, output, 0)
 	})
+}
+
+func makeSut(t *testing.T) *GenerateInvoices {
+	t.Helper()
+	err := godotenv.Load("../../../../.env")
+	if err != nil {
+		t.Fatalf("Error loading .env file: %v", err)
+	}
+	generateInvoices := NewGenerateInvoices()
+
+	return generateInvoices
 }
