@@ -6,6 +6,8 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
+
+	"invoices/internal/app/infrastructure/repository"
 )
 
 func TestGenerateInvoices(t *testing.T) {
@@ -77,7 +79,7 @@ func makeSut(t *testing.T) *GenerateInvoices {
 	if err != nil {
 		t.Fatalf("Error loading .env file: %v", err)
 	}
-	generateInvoices := NewGenerateInvoices()
+	generateInvoices := NewGenerateInvoices(repository.PSQLContractRepository{})
 
 	return generateInvoices
 }

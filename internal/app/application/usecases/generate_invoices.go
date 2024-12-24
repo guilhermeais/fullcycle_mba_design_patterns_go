@@ -2,11 +2,7 @@ package usecase
 
 import (
 	"context"
-	"fmt"
 	domain "invoices/internal/app/domain/entities"
-	"os"
-
-	"github.com/jackc/pgx/v5"
 )
 
 type GenerateInvoicesInput struct {
@@ -20,61 +16,22 @@ type GenerateInvoicesOutput struct {
 }
 
 type GenerateInvoices struct {
+	contractRepository domain.ContractRepository
 }
 
-const (
-	getContractsQuery = "select * from invoices_service.contract"
-	paymentQuery      = "select id, date, amount from invoices_service.payment where contract_id = $1"
-)
+func (generateInvioices *GenerateInvoices) Execute(input GenerateInvoicesInput) ([]GenerateInvoicesOutput, error) {
+	contracts, err := generateInvioices.contractRepository.List(context.Background())
 
-func (uc *GenerateInvoices) Execute(input GenerateInvoicesInput) ([]GenerateInvoicesOutput, error) {
-	dbUrl := os.Getenv("POSTGRES_URL")
-	conn, err := pgx.Connect(context.Background(), dbUrl)
 	if err != nil {
-		return nil, fmt.Errorf("unable to connect to database %s: %v", dbUrl, err)
+		return nil, err
 	}
-	defer conn.Close(context.Background())
 
 	var results []GenerateInvoicesOutput
-
-	var contracts []domain.Contract
-	contractRows, err := conn.Query(context.Background(), getContractsQuery)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get contracts: %v", err)
-	}
-	defer contractRows.Close()
-	for contractRows.Next() {
-		var contract domain.Contract
-		err := contractRows.Scan(&contract.Id, &contract.Description, &contract.Amount, &contract.Periods, &contract.Date)
-		if err != nil {
-			return nil, fmt.Errorf("unable to scan contract: %v", err)
-		}
-		contracts = append(contracts, contract)
-	}
-
-	if contractRows.Err() != nil {
-		return nil, fmt.Errorf("error iterating over rows: %v", contractRows.Err())
-	}
-
 	for _, contract := range contracts {
-		paymentRows, err := conn.Query(context.Background(), paymentQuery, contract.Id)
-		if err != nil {
-			return nil, fmt.Errorf("unable to get payments: %v", err)
-		}
-		defer paymentRows.Close()
-
 		const resultDateFormat = "2006-01-02"
 
-		for paymentRows.Next() {
+		for _, payment := range contract.Payments {
 			if input.Type == "cash" {
-				var payment domain.Payment
-				err := paymentRows.Scan(&payment.Id, &payment.Date, &payment.Amount)
-				if err != nil {
-					return nil, fmt.Errorf("unable to scan payment: %v", err)
-				}
-
-				fmt.Printf("payment date: %v", int(payment.Date.Month()))
-
 				if int(payment.Date.Month()) != input.Month || payment.Date.Year() != input.Year {
 					continue
 				}
@@ -102,6 +59,6 @@ func (uc *GenerateInvoices) Execute(input GenerateInvoicesInput) ([]GenerateInvo
 	return results, nil
 }
 
-func NewGenerateInvoices() *GenerateInvoices {
-	return &GenerateInvoices{}
+func NewGenerateInvoices(repo domain.ContractRepository) *GenerateInvoices {
+	return &GenerateInvoices{repo}
 }
