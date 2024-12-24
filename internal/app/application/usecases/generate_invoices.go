@@ -21,11 +21,9 @@ type GenerateInvoices struct {
 
 func (generateInvioices *GenerateInvoices) Execute(input GenerateInvoicesInput) ([]GenerateInvoicesOutput, error) {
 	contracts, err := generateInvioices.contractRepository.List(context.Background())
-
 	if err != nil {
 		return nil, err
 	}
-
 	var results []GenerateInvoicesOutput
 	for _, contract := range contracts {
 		const resultDateFormat = "2006-01-02"
