@@ -13,12 +13,45 @@ type Contract struct {
 	Payments        []Payment
 }
 
+func (c Contract) GenerateInvoices(month, year int, invoiceType string) (invoices []Invoice) {
+	if invoiceType == "cash" {
+		for _, payment := range c.Payments {
+			if int(payment.Date.Month()) != month || payment.Date.Year() != year {
+				continue
+			}
+			invoices = append(invoices, Invoice{Date: payment.Date, Amount: payment.Amount})
+		}
+	}
+
+	if invoiceType == "accrual" {
+		period := 0
+
+		for period <= c.Periods {
+			date := c.Date.AddDate(0, period, 0)
+			period++
+			amount := c.Amount / float64(c.Periods)
+
+			if int(date.Month()) != month || date.Year() != year {
+				continue
+			}
+
+			invoices = append(invoices, Invoice{Date: date, Amount: amount})
+		}
+	}
+
+	return invoices
+}
+
 type Payment struct {
 	Id     string
 	Amount float64
 	Date   time.Time
 }
 
+type Invoice struct {
+	Date   time.Time
+	Amount float64
+}
 type ContractRepository interface {
 	List(ctx context.Context) ([]Contract, error)
 }

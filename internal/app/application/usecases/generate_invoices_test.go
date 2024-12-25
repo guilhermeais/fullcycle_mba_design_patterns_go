@@ -1,4 +1,4 @@
-package usecase
+package usecase_test
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 
+	usecases "invoices/internal/app/application/usecases"
 	domain "invoices/internal/app/domain/entities"
 )
 
@@ -34,7 +35,7 @@ func TestGenerateInvoices(t *testing.T) {
 				Date:   time.Date(2024, time.Month(12), 18, 10, 0, 0, 0, time.UTC),
 			}},
 		})
-		input := GenerateInvoicesInput{
+		input := usecases.GenerateInvoicesInput{
 			Year:  2024,
 			Month: 12,
 			Type:  "cash",
@@ -45,7 +46,7 @@ func TestGenerateInvoices(t *testing.T) {
 		assert.Len(t, output, 1)
 
 		assert.Equal(t, "2024-12-18", output[0].Date)
-		assert.Equal(t, float64(6000), output[0].Amout)
+		assert.Equal(t, float64(6000), output[0].Amount)
 	})
 
 	t.Run("Deve gerar notas fiscais por regime de competência", func(t *testing.T) {
@@ -61,7 +62,7 @@ func TestGenerateInvoices(t *testing.T) {
 				Date:   time.Date(2024, time.Month(12), 18, 10, 0, 0, 0, time.UTC),
 			}},
 		})
-		input := GenerateInvoicesInput{
+		input := usecases.GenerateInvoicesInput{
 			Year:  2024,
 			Month: 12,
 			Type:  "accrual",
@@ -72,7 +73,7 @@ func TestGenerateInvoices(t *testing.T) {
 		assert.Len(t, output, 1)
 
 		assert.Equal(t, "2024-12-18", output[0].Date)
-		assert.Equal(t, float64(500), output[0].Amout)
+		assert.Equal(t, float64(500), output[0].Amount)
 	})
 
 	t.Run("Deve gerar notas fiscais por regime de competência (última data)", func(t *testing.T) {
@@ -88,7 +89,7 @@ func TestGenerateInvoices(t *testing.T) {
 				Date:   time.Date(2024, time.Month(12), 18, 10, 0, 0, 0, time.UTC),
 			}},
 		})
-		input := GenerateInvoicesInput{
+		input := usecases.GenerateInvoicesInput{
 			Year:  2025,
 			Month: 12,
 			Type:  "accrual",
@@ -99,7 +100,7 @@ func TestGenerateInvoices(t *testing.T) {
 		assert.Len(t, output, 1)
 
 		assert.Equal(t, "2025-12-18", output[0].Date)
-		assert.Equal(t, float64(500), output[0].Amout)
+		assert.Equal(t, float64(500), output[0].Amount)
 	})
 
 	t.Run("Deve gerar notas fiscais por regime de competência (fora do periodo)", func(t *testing.T) {
@@ -115,7 +116,7 @@ func TestGenerateInvoices(t *testing.T) {
 				Date:   time.Date(2024, time.Month(12), 18, 10, 0, 0, 0, time.UTC),
 			}},
 		})
-		input := GenerateInvoicesInput{
+		input := usecases.GenerateInvoicesInput{
 			Year:  2026,
 			Month: 1,
 			Type:  "accrual",
@@ -127,13 +128,13 @@ func TestGenerateInvoices(t *testing.T) {
 	})
 }
 
-func makeSut(t *testing.T, mockedContracts ...domain.Contract) *GenerateInvoices {
+func makeSut(t *testing.T, mockedContracts ...domain.Contract) *usecases.GenerateInvoices {
 	t.Helper()
 	err := godotenv.Load("../../../../.env")
 	if err != nil {
 		t.Fatalf("Error loading .env file: %v", err)
 	}
-	generateInvoices := NewGenerateInvoices(InMemoryContractRepository{
+	generateInvoices := usecases.NewGenerateInvoices(InMemoryContractRepository{
 		Contracts: mockedContracts,
 	})
 
