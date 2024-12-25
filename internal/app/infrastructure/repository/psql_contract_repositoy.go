@@ -10,6 +10,7 @@ import (
 )
 
 type PSQLContractRepository struct {
+	conn pgx.Conn
 }
 
 const (
@@ -17,15 +18,9 @@ const (
 	getContractPaymentsQuery = "select id, date, amount from invoices_service.payment where contract_id = $1"
 )
 
-func (PSQLContractRepository) List(ctx context.Context) ([]domain.Contract, error) {
-	dbUrl := os.Getenv("POSTGRES_URL")
-	conn, err := pgx.Connect(ctx, dbUrl)
-	if err != nil {
-		return nil, fmt.Errorf("unable to connect to database %s: %v", dbUrl, err)
-	}
-	defer conn.Close(ctx)
+func (p PSQLContractRepository) List(ctx context.Context) ([]domain.Contract, error) {
 	var contracts []domain.Contract
-	contractRows, err := conn.Query(ctx, getContractsQuery)
+	contractRows, err := p.conn.Query(ctx, getContractsQuery)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get contracts: %v", err)
 	}
@@ -44,7 +39,7 @@ func (PSQLContractRepository) List(ctx context.Context) ([]domain.Contract, erro
 	}
 
 	for i, contract := range contracts {
-		paymentRows, err := conn.Query(context.Background(), getContractPaymentsQuery, contract.Id)
+		paymentRows, err := p.conn.Query(context.Background(), getContractPaymentsQuery, contract.Id)
 		if err != nil {
 			return nil, fmt.Errorf("unable to get payments: %v", err)
 		}
@@ -62,4 +57,17 @@ func (PSQLContractRepository) List(ctx context.Context) ([]domain.Contract, erro
 	}
 
 	return contracts, nil
+}
+
+func MakePSQLContractRepository(conn pgx.Conn) PSQLContractRepository {
+	return PSQLContractRepository{conn}
+}
+
+func MakePGConnection() (*pgx.Conn, error) {
+	dbUrl := os.Getenv("POSTGRES_URL")
+	conn, err := pgx.Connect(context.Background(), dbUrl)
+	if err != nil {
+		return nil, err
+	}
+	return conn, nil
 }
