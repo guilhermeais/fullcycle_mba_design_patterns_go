@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"fmt"
 	"time"
 )
 
@@ -20,32 +21,26 @@ const (
 	InvoiceTypeAccrual InvoiceType = "accrual"
 )
 
-func (c Contract) GenerateInvoices(month, year int, invoiceType InvoiceType) (invoices []Invoice) {
+func (c Contract) GenerateInvoices(month, year int, invoiceType InvoiceType) ([]Invoice, error) {
+	strategy, err := makeInvoiceGenerationStrategy(invoiceType)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return strategy.Generate(c, month, year), nil
+}
+
+func makeInvoiceGenerationStrategy(invoiceType InvoiceType) (InvoiceGenerationStrategy, error) {
 	if invoiceType == InvoiceTypeCash {
-		for _, payment := range c.Payments {
-			if int(payment.Date.Month()) != month || payment.Date.Year() != year {
-				continue
-			}
-			invoices = append(invoices, Invoice{Date: payment.Date, Amount: payment.Amount})
-		}
+		return CashBasisInvoiceGeneration{}, nil
 	}
 
 	if invoiceType == InvoiceTypeAccrual {
-		period := 0
-		for period <= c.Periods {
-			date := c.Date.AddDate(0, period, 0)
-			period++
-			amount := c.Amount / float64(c.Periods)
-
-			if int(date.Month()) != month || date.Year() != year {
-				continue
-			}
-
-			invoices = append(invoices, Invoice{Date: date, Amount: amount})
-		}
+		return AccrualInvoiceGeneration{}, nil
 	}
 
-	return invoices
+	return nil, fmt.Errorf("Invoice Type %s is invalid", invoiceType)
 }
 
 type Payment struct {

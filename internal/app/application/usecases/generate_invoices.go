@@ -28,8 +28,11 @@ func (generateInvioices *GenerateInvoices) Execute(input GenerateInvoicesInput) 
 	}
 	var results []GenerateInvoicesOutput
 	for _, c := range contracts {
-
-		for _, invoice := range c.GenerateInvoices(input.Month, input.Year, input.Type) {
+		invoices, err := c.GenerateInvoices(input.Month, input.Year, input.Type)
+		if err != nil {
+			return nil, err
+		}
+		for _, invoice := range invoices {
 			results = append(results, GenerateInvoicesOutput{Date: invoice.Date.Format(resultDateFormat), Amount: invoice.Amount})
 		}
 	}
