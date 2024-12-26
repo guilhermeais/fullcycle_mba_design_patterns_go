@@ -19,7 +19,7 @@ func TestGenerateInvoices(t *testing.T) {
 			Date:        time.Date(2024, 12, 25, 17, 10, 0, 0, time.UTC),
 		}
 
-		assert.Equal(t, time.Date(2024, 12, 25, 17, 10, 0, 0, time.UTC), contract.GenerateInvoices(12, 2024, "accrual")[0].Date)
-		assert.Equal(t, time.Date(2025, 1, 25, 17, 10, 0, 0, time.UTC), contract.GenerateInvoices(1, 2025, "accrual")[0].Date)
+		assert.Equal(t, time.Date(2024, 12, 25, 17, 10, 0, 0, time.UTC), contract.GenerateInvoices(12, 2024, domain.InvoiceTypeAccrual)[0].Date)
+		assert.Equal(t, time.Date(2025, 1, 25, 17, 10, 0, 0, time.UTC), contract.GenerateInvoices(1, 2025, domain.InvoiceTypeAccrual)[0].Date)
 	})
 }

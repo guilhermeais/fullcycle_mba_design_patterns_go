@@ -13,8 +13,15 @@ type Contract struct {
 	Payments        []Payment
 }
 
-func (c Contract) GenerateInvoices(month, year int, invoiceType string) (invoices []Invoice) {
-	if invoiceType == "cash" {
+type InvoiceType string
+
+const (
+	InvoiceTypeCash    InvoiceType = "cash"
+	InvoiceTypeAccrual InvoiceType = "accrual"
+)
+
+func (c Contract) GenerateInvoices(month, year int, invoiceType InvoiceType) (invoices []Invoice) {
+	if invoiceType == InvoiceTypeCash {
 		for _, payment := range c.Payments {
 			if int(payment.Date.Month()) != month || payment.Date.Year() != year {
 				continue
@@ -23,9 +30,8 @@ func (c Contract) GenerateInvoices(month, year int, invoiceType string) (invoice
 		}
 	}
 
-	if invoiceType == "accrual" {
+	if invoiceType == InvoiceTypeAccrual {
 		period := 0
-
 		for period <= c.Periods {
 			date := c.Date.AddDate(0, period, 0)
 			period++

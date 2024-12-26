@@ -38,7 +38,7 @@ func TestGenerateInvoices(t *testing.T) {
 		input := usecases.GenerateInvoicesInput{
 			Year:  2024,
 			Month: 12,
-			Type:  "cash",
+			Type:  domain.InvoiceTypeCash,
 		}
 		output, err := generateInvoices.Execute(input)
 
@@ -65,7 +65,7 @@ func TestGenerateInvoices(t *testing.T) {
 		input := usecases.GenerateInvoicesInput{
 			Year:  2024,
 			Month: 12,
-			Type:  "accrual",
+			Type:  domain.InvoiceTypeAccrual,
 		}
 		output, err := generateInvoices.Execute(input)
 
@@ -92,7 +92,7 @@ func TestGenerateInvoices(t *testing.T) {
 		input := usecases.GenerateInvoicesInput{
 			Year:  2025,
 			Month: 12,
-			Type:  "accrual",
+			Type:  domain.InvoiceTypeAccrual,
 		}
 		output, err := generateInvoices.Execute(input)
 
@@ -119,7 +119,7 @@ func TestGenerateInvoices(t *testing.T) {
 		input := usecases.GenerateInvoicesInput{
 			Year:  2026,
 			Month: 1,
-			Type:  "accrual",
+			Type:  domain.InvoiceTypeAccrual,
 		}
 		output, err := generateInvoices.Execute(input)
 

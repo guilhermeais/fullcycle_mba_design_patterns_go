@@ -7,7 +7,7 @@ import (
 
 type GenerateInvoicesInput struct {
 	Year, Month int
-	Type        string
+	Type        domain.InvoiceType
 }
 
 type GenerateInvoicesOutput struct {
