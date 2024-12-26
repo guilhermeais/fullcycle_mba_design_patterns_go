@@ -19,6 +19,8 @@ type GenerateInvoices struct {
 	contractRepository domain.ContractRepository
 }
 
+const resultDateFormat = "2006-01-02"
+
 func (generateInvioices *GenerateInvoices) Execute(input GenerateInvoicesInput) ([]GenerateInvoicesOutput, error) {
 	contracts, err := generateInvioices.contractRepository.List(context.Background())
 	if err != nil {
@@ -26,7 +28,6 @@ func (generateInvioices *GenerateInvoices) Execute(input GenerateInvoicesInput) 
 	}
 	var results []GenerateInvoicesOutput
 	for _, c := range contracts {
-		const resultDateFormat = "2006-01-02"
 
 		for _, invoice := range c.GenerateInvoices(input.Month, input.Year, input.Type) {
 			results = append(results, GenerateInvoicesOutput{Date: invoice.Date.Format(resultDateFormat), Amount: invoice.Amount})
