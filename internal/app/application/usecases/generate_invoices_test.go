@@ -23,18 +23,19 @@ func (r InMemoryContractRepository) List(ctx context.Context) ([]domain.Contract
 
 func TestGenerateInvoices(t *testing.T) {
 	t.Run("Deve gerar notas fiscais por regime de caixa", func(t *testing.T) {
-		generateInvoices := makeSut(t, domain.Contract{
+		mockedContract := domain.Contract{
 			Id:          "fac05a57-7d61-4283-ab32-7696902eac44",
 			Description: "prestação de serviços escolares",
 			Amount:      6000,
 			Periods:     12,
 			Date:        time.Date(2024, time.Month(12), 18, 10, 0, 0, 0, time.UTC),
-			Payments: []domain.Payment{{
-				Id:     "6355b223-fce0-4f7c-998a-1f027281e308",
-				Amount: 6000,
-				Date:   time.Date(2024, time.Month(12), 18, 10, 0, 0, 0, time.UTC),
-			}},
+		}
+		mockedContract.AddPayment(domain.Payment{
+			Id:     "6355b223-fce0-4f7c-998a-1f027281e308",
+			Amount: 6000,
+			Date:   time.Date(2024, time.Month(12), 18, 10, 0, 0, 0, time.UTC),
 		})
+		generateInvoices := makeSut(t, mockedContract)
 		input := usecases.GenerateInvoicesInput{
 			Year:  2024,
 			Month: 12,
@@ -56,12 +57,8 @@ func TestGenerateInvoices(t *testing.T) {
 			Amount:      6000,
 			Periods:     12,
 			Date:        time.Date(2024, time.Month(12), 18, 10, 0, 0, 0, time.UTC),
-			Payments: []domain.Payment{{
-				Id:     "6355b223-fce0-4f7c-998a-1f027281e308",
-				Amount: 6000,
-				Date:   time.Date(2024, time.Month(12), 18, 10, 0, 0, 0, time.UTC),
-			}},
 		})
+
 		input := usecases.GenerateInvoicesInput{
 			Year:  2024,
 			Month: 12,
@@ -83,11 +80,6 @@ func TestGenerateInvoices(t *testing.T) {
 			Amount:      6000,
 			Periods:     12,
 			Date:        time.Date(2024, time.Month(12), 18, 10, 0, 0, 0, time.UTC),
-			Payments: []domain.Payment{{
-				Id:     "6355b223-fce0-4f7c-998a-1f027281e308",
-				Amount: 6000,
-				Date:   time.Date(2024, time.Month(12), 18, 10, 0, 0, 0, time.UTC),
-			}},
 		})
 		input := usecases.GenerateInvoicesInput{
 			Year:  2025,
@@ -110,11 +102,6 @@ func TestGenerateInvoices(t *testing.T) {
 			Amount:      6000,
 			Periods:     12,
 			Date:        time.Date(2024, time.Month(12), 18, 10, 0, 0, 0, time.UTC),
-			Payments: []domain.Payment{{
-				Id:     "6355b223-fce0-4f7c-998a-1f027281e308",
-				Amount: 6000,
-				Date:   time.Date(2024, time.Month(12), 18, 10, 0, 0, 0, time.UTC),
-			}},
 		})
 		input := usecases.GenerateInvoicesInput{
 			Year:  2026,

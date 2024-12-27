@@ -10,7 +10,7 @@ import (
 )
 
 func TestGenerateInvoices(t *testing.T) {
-	t.Run("Deve gerar faturas de um contrat", func(t *testing.T) {
+	t.Run("Deve gerar faturas de um contrato", func(t *testing.T) {
 		contract := domain.Contract{
 			Id:          "",
 			Description: "",
@@ -24,5 +24,23 @@ func TestGenerateInvoices(t *testing.T) {
 
 		assert.Equal(t, time.Date(2024, 12, 25, 17, 10, 0, 0, time.UTC), firstInvoice[0].Date)
 		assert.Equal(t, time.Date(2025, 1, 25, 17, 10, 0, 0, time.UTC), secondInvoice[0].Date)
+	})
+
+	t.Run("Deve calcular o saldo do contrato", func(t *testing.T) {
+		contract := domain.Contract{
+			Id:          "",
+			Description: "",
+			Amount:      6000,
+			Periods:     12,
+			Date:        time.Date(2024, 12, 25, 17, 10, 0, 0, time.UTC),
+		}
+
+		contract.AddPayment(domain.Payment{
+			Id:     "",
+			Amount: 2000,
+			Date:   time.Date(2024, 12, 25, 17, 10, 0, 0, time.UTC),
+		})
+
+		assert.Equal(t, float64(4000), contract.GetBalance())
 	})
 }

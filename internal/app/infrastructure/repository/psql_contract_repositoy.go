@@ -38,7 +38,7 @@ func (p PSQLContractRepository) List(ctx context.Context) ([]domain.Contract, er
 		return nil, fmt.Errorf("error iterating over rows: %v", contractRows.Err())
 	}
 
-	for i, contract := range contracts {
+	for _, contract := range contracts {
 		paymentRows, err := p.conn.Query(context.Background(), getContractPaymentsQuery, contract.Id)
 		if err != nil {
 			return nil, fmt.Errorf("unable to get payments: %v", err)
@@ -52,7 +52,7 @@ func (p PSQLContractRepository) List(ctx context.Context) ([]domain.Contract, er
 				return nil, fmt.Errorf("unable to scan payment: %v", err)
 			}
 
-			contracts[i].Payments = append(contract.Payments, payment)
+			contract.AddPayment(payment)
 		}
 	}
 

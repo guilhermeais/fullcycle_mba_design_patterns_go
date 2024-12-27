@@ -10,7 +10,7 @@ type Contract struct {
 	Amount          float64
 	Periods         int
 	Date            time.Time
-	Payments        []Payment
+	payments        []Payment
 }
 
 type InvoiceType string
@@ -28,6 +28,24 @@ func (c Contract) GenerateInvoices(month, year int, invoiceType InvoiceType) ([]
 	}
 
 	return strategy.Generate(c, month, year), nil
+}
+
+func (c Contract) GetBalance() float64 {
+	balance := c.Amount
+
+	for _, p := range c.payments {
+		balance -= p.Amount
+	}
+
+	return balance
+}
+
+func (c *Contract) AddPayment(p Payment) {
+	c.payments = append(c.payments, p)
+}
+
+func (c Contract) GetPayments() []Payment {
+	return c.payments
 }
 
 type Payment struct {
