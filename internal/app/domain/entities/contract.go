@@ -2,7 +2,6 @@ package domain
 
 import (
 	"context"
-	"fmt"
 	"time"
 )
 
@@ -22,25 +21,13 @@ const (
 )
 
 func (c Contract) GenerateInvoices(month, year int, invoiceType InvoiceType) ([]Invoice, error) {
-	strategy, err := makeInvoiceGenerationStrategy(invoiceType)
+	strategy, err := MakeInvoiceGenerationStrategy(invoiceType)
 
 	if err != nil {
 		return nil, err
 	}
 
 	return strategy.Generate(c, month, year), nil
-}
-
-func makeInvoiceGenerationStrategy(invoiceType InvoiceType) (InvoiceGenerationStrategy, error) {
-	if invoiceType == InvoiceTypeCash {
-		return CashBasisInvoiceGeneration{}, nil
-	}
-
-	if invoiceType == InvoiceTypeAccrual {
-		return AccrualInvoiceGeneration{}, nil
-	}
-
-	return nil, fmt.Errorf("Invoice Type %s is invalid", invoiceType)
 }
 
 type Payment struct {
