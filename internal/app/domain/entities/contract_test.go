@@ -35,6 +35,8 @@ func TestGenerateInvoices(t *testing.T) {
 			Date:        time.Date(2024, 12, 25, 17, 10, 0, 0, time.UTC),
 		}
 
+		assert.Equal(t, float64(6000), contract.GetBalance())
+
 		contract.AddPayment(domain.Payment{
 			Id:     "",
 			Amount: 2000,
