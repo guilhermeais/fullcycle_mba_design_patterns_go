@@ -18,49 +18,99 @@ import (
 )
 
 func TestGenerateInvoicesHandler(t *testing.T) {
-	err := godotenv.Load("../../../../.env")
-	if err != nil {
-		t.Fatalf("Error loading .env file: %v", err)
-	}
-	pgConnection, err := repository.MakePGConnection()
-	if err != nil {
-		log.Fatalf("error on creating the pg connection: %v", err)
-	}
-	defer pgConnection.Close(context.Background())
-	contractRepository := repository.NewPSQLContractRepository(*pgConnection)
-	generateInvoices := usecase.NewGenerateInvoices(contractRepository)
-	generateInvoicesHandler := &httpHandlers.GenerateInvoicesHandler{UseCase: generateInvoices}
-	server := httptest.NewServer((generateInvoicesHandler))
-	defer server.Close()
+	t.Run("Deve gerar faturas por regime de competência via API", func(t *testing.T) {
+		err := godotenv.Load("../../../../.env")
+		if err != nil {
+			t.Fatalf("Error loading .env file: %v", err)
+		}
+		pgConnection, err := repository.MakePGConnection()
+		if err != nil {
+			log.Fatalf("error on creating the pg connection: %v", err)
+		}
+		defer pgConnection.Close(context.Background())
+		contractRepository := repository.NewPSQLContractRepository(*pgConnection)
+		generateInvoices := usecase.NewGenerateInvoices(contractRepository)
+		generateInvoicesHandler := &httpHandlers.GenerateInvoicesHandler{UseCase: generateInvoices}
+		server := httptest.NewServer((generateInvoicesHandler))
+		defer server.Close()
 
-	input := usecase.GenerateInvoicesInput{
-		Year:  2024,
-		Month: 12,
-		Type:  domain.InvoiceTypeAccrual,
-	}
-	body, err := json.Marshal(input)
-	if err != nil {
-		t.Fatalf("Failed to marshal input: %v", err)
-	}
+		input := usecase.GenerateInvoicesInput{
+			Year:  2024,
+			Month: 12,
+			Type:  domain.InvoiceTypeAccrual,
+		}
+		body, err := json.Marshal(input)
+		if err != nil {
+			t.Fatalf("Failed to marshal input: %v", err)
+		}
 
-	req, err := http.NewRequest(http.MethodPost, server.URL+"/generate-invoices", bytes.NewBuffer(body))
-	if err != nil {
-		t.Fatalf("failed to create request: %v", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
+		req, err := http.NewRequest(http.MethodPost, server.URL+"/generate-invoices", bytes.NewBuffer(body))
+		if err != nil {
+			t.Fatalf("failed to create request: %v", err)
+		}
+		req.Header.Set("Content-Type", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		t.Fatalf("failed to send request: %v", err)
-	}
-	defer resp.Body.Close()
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("failed to send request: %v", err)
+		}
+		defer resp.Body.Close()
 
-	assert.Equal(t, resp.StatusCode, http.StatusOK)
-	output := []usecase.GenerateInvoicesOutput{}
-	err = json.NewDecoder(resp.Body).Decode(&output)
-	if err != nil {
-		t.Fatalf("failed to decode response: %v", err)
-	}
-	assert.Len(t, output, 1)
-	assert.Equal(t, usecase.GenerateInvoicesOutput{Date: "2024-12-19", Amount: 500}, output[0])
+		assert.Equal(t, resp.StatusCode, http.StatusOK)
+		output := []usecase.GenerateInvoicesOutput{}
+		err = json.NewDecoder(resp.Body).Decode(&output)
+		if err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+		assert.Len(t, output, 1)
+		assert.Equal(t, usecase.GenerateInvoicesOutput{Date: "2024-12-19", Amount: 500}, output[0])
+	})
+
+	t.Run("Deve gerar faturas pro regime de caixa via API", func(t *testing.T) {
+		err := godotenv.Load("../../../../.env")
+		if err != nil {
+			t.Fatalf("Error loading .env file: %v", err)
+		}
+		pgConnection, err := repository.MakePGConnection()
+		if err != nil {
+			log.Fatalf("error on creating the pg connection: %v", err)
+		}
+		defer pgConnection.Close(context.Background())
+		contractRepository := repository.NewPSQLContractRepository(*pgConnection)
+		generateInvoices := usecase.NewGenerateInvoices(contractRepository)
+		generateInvoicesHandler := &httpHandlers.GenerateInvoicesHandler{UseCase: generateInvoices}
+		server := httptest.NewServer((generateInvoicesHandler))
+		defer server.Close()
+
+		input := usecase.GenerateInvoicesInput{
+			Year:  2024,
+			Month: 12,
+			Type:  domain.InvoiceTypeCash,
+		}
+		body, err := json.Marshal(input)
+		if err != nil {
+			t.Fatalf("Failed to marshal input: %v", err)
+		}
+
+		req, err := http.NewRequest(http.MethodPost, server.URL+"/generate-invoices", bytes.NewBuffer(body))
+		if err != nil {
+			t.Fatalf("failed to create request: %v", err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("failed to send request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, resp.StatusCode, http.StatusOK)
+		output := []usecase.GenerateInvoicesOutput{}
+		err = json.NewDecoder(resp.Body).Decode(&output)
+		if err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+		assert.Len(t, output, 1)
+		assert.Equal(t, usecase.GenerateInvoicesOutput{Date: "2024-12-18", Amount: 6000}, output[0])
+	})
 }
