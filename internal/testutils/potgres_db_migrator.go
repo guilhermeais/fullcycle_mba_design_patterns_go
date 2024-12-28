@@ -31,4 +31,17 @@ func MigrateDb() {
 	}
 }
 
-func DropDb() {}
+func DropDb() {
+	ctx := context.Background()
+	pgConn, err := repository.MakePGConnectionWithUri(PgContainer.URI)
+	if err != nil {
+		log.Fatalf("error dropping db: %v", err)
+	}
+	defer pgConn.Close(ctx)
+	dropSchemaSQL := "DROP SCHEMA IF EXISTS invoices_service CASCADE"
+	_, err = pgConn.Exec(ctx, dropSchemaSQL)
+	if err != nil {
+		log.Fatalf("error dropping schema: %v", err)
+	}
+	log.Println("Schema 'invoices_service' dropped successfully")
+}

@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
@@ -20,6 +21,18 @@ import (
 
 func TestGenerateInvoicesHandler(t *testing.T) {
 	t.Run("Deve gerar faturas por regime de competência via API", func(t *testing.T) {
+		setup()
+		defer teardown()
+
+		mockedContract := domain.Contract{
+			Id:          "fac05a57-7d61-4283-ab32-7696902eac44",
+			Description: "prestação de serviços escolares",
+			Amount:      6000,
+			Periods:     12,
+			Date:        time.Date(2024, time.Month(12), 18, 10, 0, 0, 0, time.UTC),
+		}
+		contractFactory := testutils.ContractFactory{}
+		contractFactory.CreateContract(mockedContract)
 		server := makeSut(t)
 		defer server.Close()
 
@@ -35,10 +48,26 @@ func TestGenerateInvoicesHandler(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		output := decodeInvoicesResponse(t, resp)
 		assert.Len(t, output, 1)
-		assert.Equal(t, usecase.GenerateInvoicesOutput{Date: "2024-12-19", Amount: 500}, output[0])
+		assert.Equal(t, usecase.GenerateInvoicesOutput{Date: "2024-12-18", Amount: 500}, output[0])
 	})
 
 	t.Run("Deve gerar faturas pro regime de caixa via API", func(t *testing.T) {
+		setup()
+		defer teardown()
+		mockedContract := domain.Contract{
+			Id:          "fac05a57-7d61-4283-ab32-7696902eac44",
+			Description: "prestação de serviços escolares",
+			Amount:      6000,
+			Periods:     12,
+			Date:        time.Date(2024, time.Month(12), 18, 10, 0, 0, 0, time.UTC),
+		}
+		mockedContract.AddPayment(domain.Payment{
+			Id:     "6355b223-fce0-4f7c-998a-1f027281e308",
+			Amount: 6000,
+			Date:   time.Date(2024, time.Month(12), 18, 10, 0, 0, 0, time.UTC),
+		})
+		contractFactory := testutils.ContractFactory{}
+		contractFactory.CreateContract(mockedContract)
 		server := makeSut(t)
 		defer server.Close()
 		body := makeBody(t, usecase.GenerateInvoicesInput{
@@ -89,22 +118,27 @@ func makeBody(t *testing.T, input usecase.GenerateInvoicesInput) []byte {
 }
 
 func makeSut(t *testing.T) *httptest.Server {
-	t.Helper()
-	err := godotenv.Load("../../../../.env")
-	if err != nil {
-		t.Fatalf("Error loading .env file: %v", err)
-	}
-
 	pgConnection, err := repository.MakePGConnectionWithUri(testutils.PgContainer.URI)
 	t.Cleanup(func() {
 		pgConnection.Close(context.Background())
 	})
-	testutils.MigrateDb()
 	if err != nil {
 		log.Fatalf("error on creating the pg connection: %v", err)
 	}
 	contractRepository := repository.NewPSQLContractRepository(*pgConnection)
 	generateInvoices := usecase.NewGenerateInvoices(contractRepository)
 	generateInvoicesHandler := &httpHandlers.GenerateInvoicesHandler{UseCase: generateInvoices}
-	return httptest.NewServer((generateInvoicesHandler))
+	return httptest.NewServer(generateInvoicesHandler)
+}
+
+func setup() {
+	err := godotenv.Load("../../../../.env")
+	if err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
+	testutils.MigrateDb()
+}
+
+func teardown() {
+	testutils.DropDb()
 }
