@@ -6,13 +6,14 @@ import (
 )
 
 type GenerateInvoicesInput struct {
-	Year, Month int
-	Type        domain.InvoiceType
+	Year  int                `json:"year"`
+	Month int                `json:"month"`
+	Type  domain.InvoiceType `json:"type"`
 }
 
 type GenerateInvoicesOutput struct {
-	Date   string
-	Amount float64
+	Date   string  `json:"date"`
+	Amount float64 `json:"amount"`
 }
 
 type GenerateInvoices struct {
@@ -26,7 +27,7 @@ func (generateInvioices *GenerateInvoices) Execute(input GenerateInvoicesInput) 
 	if err != nil {
 		return nil, err
 	}
-	var results []GenerateInvoicesOutput
+	results := []GenerateInvoicesOutput{}
 	for _, c := range contracts {
 		invoices, err := c.GenerateInvoices(input.Month, input.Year, input.Type)
 		if err != nil {

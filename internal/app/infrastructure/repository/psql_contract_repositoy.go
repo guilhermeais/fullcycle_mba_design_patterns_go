@@ -59,7 +59,7 @@ func (p PSQLContractRepository) List(ctx context.Context) ([]domain.Contract, er
 	return contracts, nil
 }
 
-func MakePSQLContractRepository(conn pgx.Conn) PSQLContractRepository {
+func NewPSQLContractRepository(conn pgx.Conn) PSQLContractRepository {
 	return PSQLContractRepository{conn}
 }
 
