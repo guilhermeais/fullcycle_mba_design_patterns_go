@@ -71,3 +71,11 @@ func MakePGConnection() (*pgx.Conn, error) {
 	}
 	return conn, nil
 }
+
+func MakePGConnectionWithUri(connString string) (*pgx.Conn, error) {
+	conn, err := pgx.Connect(context.Background(), connString)
+	if err != nil {
+		return nil, err
+	}
+	return conn, nil
+}

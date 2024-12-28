@@ -8,6 +8,7 @@ import (
 	domain "invoices/internal/app/domain/entities"
 	httpHandlers "invoices/internal/app/infrastructure/http"
 	"invoices/internal/app/infrastructure/repository"
+	testutils "invoices/internal/testutils"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -31,7 +32,7 @@ func TestGenerateInvoicesHandler(t *testing.T) {
 		resp := postGenerateInvoices(t, server, body)
 		defer resp.Body.Close()
 
-		assert.Equal(t, resp.StatusCode, http.StatusOK)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		output := decodeInvoicesResponse(t, resp)
 		assert.Len(t, output, 1)
 		assert.Equal(t, usecase.GenerateInvoicesOutput{Date: "2024-12-19", Amount: 500}, output[0])
@@ -93,10 +94,12 @@ func makeSut(t *testing.T) *httptest.Server {
 	if err != nil {
 		t.Fatalf("Error loading .env file: %v", err)
 	}
-	pgConnection, err := repository.MakePGConnection()
+
+	pgConnection, err := repository.MakePGConnectionWithUri(testutils.PgContainer.URI)
 	t.Cleanup(func() {
 		pgConnection.Close(context.Background())
 	})
+	testutils.MigrateDb()
 	if err != nil {
 		log.Fatalf("error on creating the pg connection: %v", err)
 	}

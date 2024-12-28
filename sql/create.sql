@@ -19,5 +19,5 @@ create table invoices_service.payment (
     date timestamp
 );
 
-insert into invoices_service.contract values ('fac05a57-7d61-4283-ab32-7696902eac44', 'prestação de serviços escolares', 6000, 12, '2024-12-19t10:00:00');
-insert into invoices_service.payment values ('6355b223-fce0-4f7c-998a-1f027281e308', 'fac05a57-7d61-4283-ab32-7696902eac44', 6000, '2024-12-18t10:00:00');
+-- insert into invoices_service.contract values ('fac05a57-7d61-4283-ab32-7696902eac44', 'prestação de serviços escolares', 6000, 12, '2024-12-19t10:00:00');
+-- insert into invoices_service.payment values ('6355b223-fce0-4f7c-998a-1f027281e308', 'fac05a57-7d61-4283-ab32-7696902eac44', 6000, '2024-12-18t10:00:00');
