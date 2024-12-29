@@ -1,4 +1,4 @@
-package http_test
+package http_handlers_test
 
 import (
 	"bytes"
@@ -143,7 +143,7 @@ func makeSut(t *testing.T) (*httptest.Server, testutils.ContractFactory) {
 	})
 	contractRepository := repository.NewPSQLContractRepository(*pgConnection)
 	generateInvoices := usecase.NewGenerateInvoices(contractRepository)
-	generateInvoicesHandler := &httpHandlers.GenerateInvoicesHandler{UseCase: generateInvoices}
+	generateInvoicesHandler := httpHandlers.LoggerDecorator{&httpHandlers.GenerateInvoicesHandler{UseCase: generateInvoices}}
 
 	contractFactory := testutils.ContractFactory{Conn: pgConnection}
 	return httptest.NewServer(generateInvoicesHandler), contractFactory

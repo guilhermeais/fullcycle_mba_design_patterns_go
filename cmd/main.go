@@ -27,7 +27,7 @@ func main() {
 	defer pgConnection.Close(context.Background())
 	contractRepository := repository.NewPSQLContractRepository(*pgConnection)
 	generateInvoices := usecase.NewGenerateInvoices(contractRepository)
-	generateInvoicesHandler := &httpHandlers.GenerateInvoicesHandler{UseCase: generateInvoices}
+	generateInvoicesHandler := httpHandlers.LoggerDecorator{Decoratee: &httpHandlers.GenerateInvoicesHandler{UseCase: generateInvoices}}
 
 	http.Handle("/generate-invoices", generateInvoicesHandler)
 	log.Println("Servidor HTTP iniciado na porta 8080")
