@@ -28,7 +28,6 @@ func init() {
 		log.Fatalf("error on initiating postgres container: %v", err)
 	}
 	log.Printf("Starting postgres on port '%d'...\n", port)
-
 	req := testcontainers.ContainerRequest{
 		Image:        "postgres:13",
 		ExposedPorts: []string{fmt.Sprintf("%d:5432/tcp", port)},
@@ -42,7 +41,6 @@ func init() {
 			hc.AutoRemove = true
 		},
 	}
-
 	ctx := context.Background()
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
@@ -50,16 +48,23 @@ func init() {
 	})
 	if err != nil {
 		log.Fatalf("error on initiating postgres container: %v", err)
-
 	}
-
 	host, err := container.Host(ctx)
 	if err != nil {
 		log.Fatalf("error on initiating postgres container: %v", err)
-
 	}
-
 	uri := fmt.Sprintf("postgres://test:test@%s:%d/testdb?sslmode=disable", host, port)
+	pgConn, err := repository.MakePGConnectionWithUri(uri)
+	if err != nil {
+		log.Fatalf("error migrating db: %v", err)
+	}
+	createExtensionSQL := `CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`
+	_, err = pgConn.Exec(ctx, createExtensionSQL)
+	if err != nil {
+		log.Fatalf("error creating extension: %v", err)
+	}
+	pgConn.Close(ctx)
+
 	PgContainer = &PostgresContainer{
 		Container: container,
 		URI:       uri,
@@ -87,7 +92,7 @@ func CreateNewSchema() (newSchemaResult, error) {
 		return schema, fmt.Errorf("error creating new schema: %v", err)
 	}
 
-	newSchemaURI := fmt.Sprintf("%s&search_path=%s", PgContainer.URI, newSchemaName)
+	newSchemaURI := fmt.Sprintf("%s&search_path=%s,public", PgContainer.URI, newSchemaName)
 	schema.Schema = newSchemaName
 	schema.URI = newSchemaURI
 	return schema, nil

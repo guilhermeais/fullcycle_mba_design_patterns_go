@@ -17,19 +17,16 @@ type PostgresDbMigrator struct {
 func (p *PostgresDbMigrator) MigrateDb() {
 	ctx := context.Background()
 	sqlMigrationFilePath := os.Getenv("TEST_SQL_MIGRATION_PATH")
-
-	log.Printf("migrating with file '%s'", sqlMigrationFilePath)
-
+	log.Printf("migrating with file '%s' on schema '%s'", sqlMigrationFilePath, p.Schema)
 	sqlFile, err := os.ReadFile(sqlMigrationFilePath)
 	if err != nil {
-		log.Fatalf("error migrating db: %v", err)
+		log.Fatalf("error migrating db on schema '%s': %v", err, p.Schema)
 	}
 	sql := string(sqlFile)
 	log.Println(string(sqlFile))
-
 	_, err = p.Conn.Exec(ctx, sql)
 	if err != nil {
-		log.Fatalf("error migrating db: %v", err)
+		log.Fatalf("error migrating db on schema %s: %v", p.Schema, err)
 	}
 }
 

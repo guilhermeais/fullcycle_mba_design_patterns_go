@@ -1,4 +1,4 @@
-create extension if not exists "uuid-ossp";
+-- create extension if not exists "uuid-ossp";
 
 create table contract (
     id uuid not null default uuid_generate_v4() primary key,

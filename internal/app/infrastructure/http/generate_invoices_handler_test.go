@@ -27,6 +27,7 @@ func TestMain(m *testing.M) {
 }
 func TestGenerateInvoicesHandler(t *testing.T) {
 	t.Run("Deve gerar faturas por regime de competência via API", func(t *testing.T) {
+		t.Parallel()
 		server, contractFactory := makeSut(t)
 		defer server.Close()
 
@@ -58,6 +59,8 @@ func TestGenerateInvoicesHandler(t *testing.T) {
 	})
 
 	t.Run("Deve gerar faturas pro regime de caixa via API", func(t *testing.T) {
+		t.Parallel()
+
 		server, contractFactory := makeSut(t)
 		defer server.Close()
 
