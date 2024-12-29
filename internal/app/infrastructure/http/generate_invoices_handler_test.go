@@ -60,7 +60,6 @@ func TestGenerateInvoicesHandler(t *testing.T) {
 
 	t.Run("Deve gerar faturas pro regime de caixa via API", func(t *testing.T) {
 		t.Parallel()
-
 		server, contractFactory := makeSut(t)
 		defer server.Close()
 
