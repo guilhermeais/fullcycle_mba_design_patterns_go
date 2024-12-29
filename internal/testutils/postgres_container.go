@@ -3,10 +3,13 @@ package testutils
 import (
 	"context"
 	"fmt"
+	"invoices/internal/app/infrastructure/repository"
 	"log"
 	"net"
+	"strings"
 
 	"github.com/docker/docker/api/types/container"
+	"github.com/google/uuid"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
@@ -61,6 +64,33 @@ func init() {
 		Container: container,
 		URI:       uri,
 	}
+}
+
+type newSchemaResult struct {
+	URI, Schema string
+}
+
+func CreateNewSchema() (newSchemaResult, error) {
+	ctx := context.Background()
+	conn, err := repository.MakePGConnectionWithUri(PgContainer.URI)
+	schema := newSchemaResult{}
+	if err != nil {
+		return schema, fmt.Errorf("error connecting to database: %v", err)
+	}
+	defer conn.Close(ctx)
+
+	newSchemaName := "schema_" + strings.Join(strings.Split(uuid.New().String(), "-"), "_")
+	log.Printf("creating new schema: '%s'", newSchemaName)
+	createSchemaSQL := fmt.Sprintf("CREATE SCHEMA %s", newSchemaName)
+	_, err = conn.Exec(ctx, createSchemaSQL)
+	if err != nil {
+		return schema, fmt.Errorf("error creating new schema: %v", err)
+	}
+
+	newSchemaURI := fmt.Sprintf("%s&search_path=%s", PgContainer.URI, newSchemaName)
+	schema.Schema = newSchemaName
+	schema.URI = newSchemaURI
+	return schema, nil
 }
 
 func findAvailablePort() (int, error) {

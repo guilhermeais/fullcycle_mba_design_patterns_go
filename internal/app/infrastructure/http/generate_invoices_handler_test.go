@@ -12,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
@@ -19,10 +20,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestMain(m *testing.M) {
+	setup()
+	code := m.Run()
+	os.Exit(code)
+}
 func TestGenerateInvoicesHandler(t *testing.T) {
 	t.Run("Deve gerar faturas por regime de competência via API", func(t *testing.T) {
-		setup()
-		defer teardown()
+		server, contractFactory := makeSut(t)
+		defer server.Close()
 
 		mockedContract := domain.Contract{
 			Id:          "fac05a57-7d61-4283-ab32-7696902eac44",
@@ -31,10 +37,10 @@ func TestGenerateInvoicesHandler(t *testing.T) {
 			Periods:     12,
 			Date:        time.Date(2024, time.Month(12), 18, 10, 0, 0, 0, time.UTC),
 		}
-		contractFactory := testutils.ContractFactory{}
-		contractFactory.CreateContract(mockedContract)
-		server := makeSut(t)
-		defer server.Close()
+		err := contractFactory.CreateContract(mockedContract)
+		if err != nil {
+			t.Fatalf("error creating mocked contract: %v\n", err)
+		}
 
 		body := makeBody(t, usecase.GenerateInvoicesInput{
 			Year:  2024,
@@ -52,8 +58,9 @@ func TestGenerateInvoicesHandler(t *testing.T) {
 	})
 
 	t.Run("Deve gerar faturas pro regime de caixa via API", func(t *testing.T) {
-		setup()
-		defer teardown()
+		server, contractFactory := makeSut(t)
+		defer server.Close()
+
 		mockedContract := domain.Contract{
 			Id:          "fac05a57-7d61-4283-ab32-7696902eac44",
 			Description: "prestação de serviços escolares",
@@ -66,10 +73,7 @@ func TestGenerateInvoicesHandler(t *testing.T) {
 			Amount: 6000,
 			Date:   time.Date(2024, time.Month(12), 18, 10, 0, 0, 0, time.UTC),
 		})
-		contractFactory := testutils.ContractFactory{}
 		contractFactory.CreateContract(mockedContract)
-		server := makeSut(t)
-		defer server.Close()
 		body := makeBody(t, usecase.GenerateInvoicesInput{
 			Year:  2024,
 			Month: 12,
@@ -117,18 +121,30 @@ func makeBody(t *testing.T, input usecase.GenerateInvoicesInput) []byte {
 	return body
 }
 
-func makeSut(t *testing.T) *httptest.Server {
-	pgConnection, err := repository.MakePGConnectionWithUri(testutils.PgContainer.URI)
+func makeSut(t *testing.T) (*httptest.Server, testutils.ContractFactory) {
+	schema, err := testutils.CreateNewSchema()
+	if err != nil {
+		t.Fatalf("error on creating schema for this test: %v", err)
+	}
+
+	pgConnection, err := repository.MakePGConnectionWithUri(schema.URI)
+	if err != nil {
+		t.Fatalf("error on creating the pg connection: %v", err)
+	}
 	t.Cleanup(func() {
 		pgConnection.Close(context.Background())
 	})
-	if err != nil {
-		log.Fatalf("error on creating the pg connection: %v", err)
-	}
+	dbMigrator := testutils.PostgresDbMigrator{Conn: *pgConnection, Schema: schema.Schema}
+	dbMigrator.MigrateDb()
+	t.Cleanup(func() {
+		dbMigrator.DropDb()
+	})
 	contractRepository := repository.NewPSQLContractRepository(*pgConnection)
 	generateInvoices := usecase.NewGenerateInvoices(contractRepository)
 	generateInvoicesHandler := &httpHandlers.GenerateInvoicesHandler{UseCase: generateInvoices}
-	return httptest.NewServer(generateInvoicesHandler)
+
+	contractFactory := testutils.ContractFactory{Conn: pgConnection}
+	return httptest.NewServer(generateInvoicesHandler), contractFactory
 }
 
 func setup() {
@@ -136,9 +152,4 @@ func setup() {
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
-	testutils.MigrateDb()
-}
-
-func teardown() {
-	testutils.DropDb()
 }

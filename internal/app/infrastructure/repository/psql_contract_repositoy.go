@@ -14,8 +14,8 @@ type PSQLContractRepository struct {
 }
 
 const (
-	getContractsQuery        = "select * from invoices_service.contract"
-	getContractPaymentsQuery = "select id, date, amount from invoices_service.payment where contract_id = $1"
+	getContractsQuery        = "select * from contract"
+	getContractPaymentsQuery = "select id, date, amount from payment where contract_id = $1"
 )
 
 func (p PSQLContractRepository) List(ctx context.Context) ([]domain.Contract, error) {

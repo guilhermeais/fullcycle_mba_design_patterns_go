@@ -5,29 +5,27 @@ import (
 	"fmt"
 
 	domain "invoices/internal/app/domain/entities"
-	"invoices/internal/app/infrastructure/repository"
+
+	"github.com/jackc/pgx/v5"
 )
 
 const createContractSQL = `
-    INSERT INTO invoices_service.contract (id, description, amount, periods, date)
+    INSERT INTO contract (id, description, amount, periods, date)
     VALUES ($1, $2, $3, $4, $5);
 `
 
 const createPaymentSQL = `
-    INSERT INTO invoices_service.payment (id, contract_id, amount, date)
+    INSERT INTO payment (id, contract_id, amount, date)
     VALUES ($1, $2, $3, $4);
 `
 
-type ContractFactory struct{}
+type ContractFactory struct {
+	Conn *pgx.Conn
+}
 
-func (ContractFactory) CreateContract(c domain.Contract) error {
+func (cf *ContractFactory) CreateContract(c domain.Contract) error {
 	ctx := context.Background()
-	conn, err := repository.MakePGConnectionWithUri(PgContainer.URI)
-	if err != nil {
-		return fmt.Errorf("error connecting to database: %v", err)
-	}
-	defer conn.Close(ctx)
-	tx, err := conn.Begin(ctx)
+	tx, err := cf.Conn.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating transaciton: %v", err)
 	}
