@@ -22,14 +22,14 @@ type Observer[T any] struct {
 	subscribers map[EventType][]chan<- Event[T]
 }
 
-func (m *Observer[T]) Notify(event Event[T]) {
-	for _, sub := range m.subscribers[event.Type] {
+func (o *Observer[T]) Notify(event Event[T]) {
+	for _, sub := range o.subscribers[event.Type] {
 		sub <- event
 	}
 }
 
-func (m *Observer[T]) Subscribe(eventType EventType, channel chan<- Event[T]) {
-	m.subscribers[eventType] = append(m.subscribers[eventType], channel)
+func (o *Observer[T]) Subscribe(eventType EventType, channel chan<- Event[T]) {
+	o.subscribers[eventType] = append(o.subscribers[eventType], channel)
 }
 
 func NewObserver[T any]() *Observer[T] {
