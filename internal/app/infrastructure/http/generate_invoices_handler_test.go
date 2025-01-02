@@ -142,7 +142,7 @@ func makeSut(t *testing.T) (*httptest.Server, testutils.ContractFactory) {
 		dbMigrator.DropDb()
 	})
 	contractRepository := repository.NewPSQLContractRepository(*pgConnection)
-	generateInvoices := usecase.NewGenerateInvoices(contractRepository)
+	generateInvoices := usecase.NewGenerateInvoices(contractRepository, usecase.NewObserver[usecase.InvoiceGeneratedEventData]())
 	generateInvoicesHandler := httpHandlers.LoggerDecorator{&httpHandlers.GenerateInvoicesHandler{UseCase: generateInvoices}}
 
 	contractFactory := testutils.ContractFactory{Conn: pgConnection}

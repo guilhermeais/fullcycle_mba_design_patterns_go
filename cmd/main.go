@@ -26,7 +26,7 @@ func main() {
 	}
 	defer pgConnection.Close(context.Background())
 	contractRepository := repository.NewPSQLContractRepository(*pgConnection)
-	generateInvoices := usecase.NewGenerateInvoices(contractRepository)
+	generateInvoices := usecase.NewGenerateInvoices(contractRepository, usecase.NewObserver[usecase.InvoiceGeneratedEventData]())
 	generateInvoicesHandler := httpHandlers.LoggerDecorator{Decoratee: &httpHandlers.GenerateInvoicesHandler{UseCase: generateInvoices}}
 
 	http.Handle("/generate-invoices", generateInvoicesHandler)
